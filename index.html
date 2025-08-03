@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <title>Kelas X-I Ultra • MAN 2 Semarang</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    body { font-family: 'Poppins', sans-serif; }
+    .gradient-bg {
+      background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+    }
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .glass {
+      background: rgba(255,255,255,.1);
+      backdrop-filter: blur(12px) saturate(180%);
+      border: 1px solid rgba(255,255,255,.2);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.4); border-radius: 3px; }
+  </style>
+</head>
+<body x-data="app()" class="gradient-bg min-h-screen text-white overflow-x-hidden">
+
+<!-- LOGIN MODAL -->
+<div x-show="showLogin" x-transition class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+  <div class="glass rounded-2xl p-8 w-80 animate-pulse-once">
+    <h2 class="text-2xl font-bold mb-4 text-center">🔐 Login Admin</h2>
+    <input x-model="user" placeholder="Username" class="w-full mb-3 p-2 rounded text-black">
+    <input x-model="pass" type="password" placeholder="Password" class="w-full mb-4 p-2 rounded text-black">
+    <button @click="login()" class="w-full bg-indigo-600 hover:bg-indigo-700 py-2 rounded font-semibold">Masuk</button>
+    <button @click="showLogin=false" class="w-full mt-2 text-sm underline">Tutup</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="glass sticky top-0 z-40 flex justify-between items-center px-6 py-4">
+  <h1 class="text-xl md:text-2xl font-bold">Kelas X-I Ultra</h1>
+  <div class="flex items-center gap-4">
+    <button @click="toggleDark()" class="p-2 rounded-full glass">
+      <span x-text="dark ? '🌙' : '☀️'"></span>
+    </button>
+    <button @click="showLogin=true" class="bg-yellow-400 text-black px-4 py-2 rounded-full font-semibold">Admin</button>
+  </div>
+</header>
+
+<!-- REAL-TIME CLOCK -->
+<div class="text-center mt-6 text-2xl font-mono tracking-widest" x-text="clock"></div>
+
+<!-- MAIN CARDS -->
+<main class="container mx-auto my-8 px-4 grid md:grid-cols-3 gap-6">
+
+  <!-- Murid -->
+  <section x-show="fadeIn" x-transition class="glass rounded-2xl p-6 hover:scale-[1.02] transition-transform">
+    <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span>👥</span>Daftar Murid</h2>
+    <ul class="space-y-1 text-sm max-h-72 overflow-y-auto pr-2">
+      <template x-for="m in murid" :key="m"><li x-text="m" class="hover:text-yellow-300 cursor-pointer"></li></template>
+    </ul>
+    <div x-show="admin" class="mt-4">
+      <input x-model="newMurid" @keyup.enter="tambahMurid()" placeholder="Nama baru" class="w-full mb-2 p-2 rounded text-black">
+      <button @click="tambahMurid()" class="w-full bg-green-500 hover:bg-green-600 py-1 rounded text-sm font-semibold">Tambah</button>
+    </div>
+  </section>
+
+  <!-- Piket -->
+  <section x-show="fadeIn" x-transition.delay.100ms class="glass rounded-2xl p-6 hover:scale-[1.02] transition-transform">
+    <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span>🧹</span>Jadwal Piket</h2>
+    <table class="w-full text-sm">
+      <template x-for="([hari,nama],i) in Object.entries(piket)" :key="i">
+        <tr>
+          <td class="font-bold pr-2" x-text="hari+':'"></td>
+          <td x-text="nama.join(', ')"></td>
+        </tr>
+      </template>
+    </table>
+    <button x-show="admin" @click="editPiket()" class="mt-3 w-full bg-green-500 hover:bg-green-600 py-1 rounded text-sm font-semibold">Edit</button>
+  </section>
+
+  <!-- Pelajaran -->
+  <section x-show="fadeIn" x-transition.delay.200ms class="glass rounded-2xl p-6 hover:scale-[1.02] transition-transform">
+    <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span>📚</span>Jadwal Pelajaran</h2>
+    <div class="text-xs space-y-2 max-h-72 overflow-y-auto pr-2">
+      <template x-for="([hari,jamPel],i) in Object.entries(pelajaran)" :key="i">
+        <div>
+          <b x-text="hari"></b>
+          <ul class="list-disc list-inside ml-2">
+            <template x-for="j in jamPel" :key="j"><li x-text="j"></li></template>
+          </ul>
+        </div>
+      </template>
+    </div>
+    <button x-show="admin" @click="editPel()" class="mt-3 w-full bg-green-500 hover:bg-green-600 py-1 rounded text-sm font-semibold">Edit</button>
+  </section>
+</main>
+
+<!-- FLOATING ACTION BUTTON -->
+<button x-show="admin" x-transition x-cloak
+        @click="scrollToTop()"
+        class="fixed bottom-6 right-6 bg-yellow-400 text-black p-3 rounded-full shadow-xl hover:scale-110 transition-transform">
+  ⬆️
+</button>
+
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('app', () => ({
+    dark: false,
+    showLogin: false,
+    admin: false,
+    user:'', pass:'',
+    newMurid:'',
+    fadeIn: false,
+    clock:'',
+    murid: ["Sania","Febi","Meisha","Ririn","Siska","Sadana","Wafi","Rajid","Alim","Daman","Ilham","Rezky","Hafi","Rayya","Aca","Jihan","Zahwa","Tasya","Naswa","Nanda","Nafis","Jawahir","Ikmal","Nino","Faaza","Azza","Fadila","Aina","Sheila","Firda","Chiko","Zahra","Noval","Munib","Adam","Faris"],
+    piket: { Senin:["Sania","Febi"], Selasa:["Meisha","Ririn","Siska","Sadana","Wafi","Rajid","Alim","Daman","Ilham","Rezky"], Rabu:["Hafi","Rayya","Aca","Jihan","Zahwa","Tasya","Naswa","Nanda","Nafis","Jawahir","Ikmal","Nino"], Kamis:["Faaza","Azza","Fadila","Aina","Sheila","Firda","Chiko","Zahra","Noval","Munib","Adam","Faris"], Jumat:["Sania","Febi"], Sabtu:["Meisha","Ririn"] },
+    pelajaran: {
+      Senin: ["07.00-07.40  Do'a & KBM","07.40-08.20  Bhs. Inggris","08.30-09.15  SKI","09.15-10.00  Sosiologi","10.15-11.00  Ekonomi","11.00-11.45  Informatika","11.45-12.30  Fiqih"],
+      Selasa: ["07.00-07.45  Do'a & KBM","07.45-08.30  Seni Budaya","08.30-09.15  Bahasa Arab","09.15-10.00  Quran Hadits","10.00-10.45  Matematika","11.00-11.45  Bahasa Jawa","11.45-12.30  Bahasa Indonesia"],
+      Rabu: ["07.00-07.45  Do'a & KBM","07.45-08.30  Fisika","08.30-09.15  Aqidah Akhlak","09.15-10.00  Geografi","10.15-11.00  Sosiologi","11.00-11.45  Bahasa Inggris","11.45-12.30  DOA Selesai KBM"],
+      Kamis: ["07.00-07.45  Do'a & KBM","07.45-08.30  Biologi","08.30-09.15  Penjasorkes","09.15-10.00  Pendidikan Pancasila","10.15-11.00  Bahasa Indonesia","11.00-11.45  Geografi","11.45-12.30  Sejarah"],
+      Jumat: ["07.00-07.45  Do'a & KBM","07.45-08.30  BTA","08.30-09.15  Sholat Jumat","09.15-10.00  Sholat Jumat","10.15-11.00  Sholat Jumat","11.00-11.45  Sholat Jumat","11.45-12.30  Sholat Jumat"],
+      Sabtu: ["07.00-07.45  Do'a & KBM","07.45-08.30  Kelas Olimpiade Kimia","08.30-09.15  Kelas Olimpiade Biologi","09.15-10.00  Kelas Olimpiade Biologi","10.15-11.00  Kelas Olimpiade Biologi","11.00-11.45  Kelas Olimpiade Biologi","11.45-12.30  DOA Selesai KBM"]
+    },
+    init() {
+      setInterval(() => {
+        this.clock = new Date().toLocaleTimeString('id-ID');
+      }, 1000);
+      setTimeout(() => this.fadeIn = true, 300);
+    },
+    toggleDark() {
+      this.dark = !this.dark;
+      document.documentElement.classList.toggle('dark', this.dark);
+    },
+    login() {
+      if (this.user === 'admin' && this.pass === 'admin123') {
+        this.admin = true;
+        this.showLogin = false;
+      } else alert('Username / Password salah!');
+    },
+    tambahMurid() {
+      if (this.newMurid.trim()) {
+        this.murid.push(this.newMurid.trim());
+        this.newMurid = '';
+      }
+    },
+    editPiket() {
+      const hari = prompt('Hari? (Senin/Selasa/Rabu/Kamis/Jumat/Sabtu)');
+      if (!hari || !this.piket[hari]) return;
+      const nama = prompt('Nama piket (pisah koma):', this.piket[hari].join(', '));
+      if (nama) this.piket[hari] = nama.split(',').map(n => n.trim());
+    },
+    editPel() {
+      const hari = prompt('Hari?');
+      if (!hari || !this.pelajaran[hari]) return;
+      const jam = prompt('Jadwal (baris baru = enter):', this.pelajaran[hari].join('\n'));
+      if (jam) this.pelajaran[hari] = jam.split('\n');
+    },
+    scrollToTop() { window.scrollTo({top:0, behavior:'smooth'}); }
+  }));
+});
+</script>
+</body>
+</html>
